@@ -11,11 +11,12 @@ The logged-in customer's account ID is ACC-1001.
 Use the available tools to answer questions and complete requests."""
 
 
-def build_naive_agent():
+def build_naive_agent(checkpointer=None):
     """Stage 1: LLM + tools, no harness. Safety depends entirely on the model."""
     s = get_settings()
     llm = ChatOpenAI(model=s.openai_model, api_key=s.openai_api_key, temperature=0)
-    return create_agent(model=llm, tools=ALL_TOOLS, system_prompt=NAIVE_SYSTEM_PROMPT)
+    return create_agent(model=llm, tools=ALL_TOOLS, system_prompt=NAIVE_SYSTEM_PROMPT,
+                        checkpointer=checkpointer)
 
 
 def print_trace(messages) -> None:

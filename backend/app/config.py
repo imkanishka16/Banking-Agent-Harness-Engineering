@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     max_transfer_amount: float = 50_000
     max_agent_steps: int = 8
+    daily_transfer_limit: float = 100_000
 
 
 @lru_cache

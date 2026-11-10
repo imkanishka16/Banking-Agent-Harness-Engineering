@@ -2,18 +2,8 @@ import pytest
 
 from app.bank.mock_bank import bank
 from app.harness.tool_policy import check_transfer
-from app.tools.session_tools import Session, build_session_tools
 
-
-@pytest.fixture(autouse=True)
-def fresh_bank():
-    bank.reset()
-
-
-@pytest.fixture
-def tools():
-    t = build_session_tools(Session(account_id="ACC-1001", customer_name="Demo Customer"))
-    return {tool.name: tool for tool in t}
+# Fixtures (fresh_bank, tools) live in conftest.py
 
 
 # ---- policy rules ----
@@ -43,6 +33,13 @@ def test_blocks_non_positive_amount(amount):
     assert check_transfer("ACC-1001", "BEN-01", amount).code == "INVALID_AMOUNT"
 
 
+def test_blocks_when_daily_limit_reached():
+    bank.transfer("ACC-1001", "BEN-01", 50_000)
+    bank.transfer("ACC-1001", "BEN-02", 50_000)
+    d = check_transfer("ACC-1001", "BEN-03", 10_000)
+    assert not d.allowed and d.code == "DAILY_LIMIT_EXCEEDED"
+
+
 # ---- session binding ----
 
 def test_llm_cannot_choose_account(tools):
@@ -61,3 +58,14 @@ def test_cannot_read_other_customers_transaction(tools):
     assert tools["get_transaction_status"].invoke({"transaction_id": tx.transaction_id}) == {
         "error": "Transaction not found."
     }
+
+
+def test_splitting_cannot_bypass_daily_limit(tools):
+    """Attack 7: three transfers that each pass the per-transfer limit."""
+    results = [
+        tools["transfer_money"].invoke({"beneficiary_id": "BEN-01", "amount": 40_000})
+        for _ in range(3)
+    ]
+    assert "transaction_id" in results[0]
+    assert "transaction_id" in results[1]
+    assert results[2]["blocked_by_policy"] == "DAILY_LIMIT_EXCEEDED"

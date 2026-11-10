@@ -1,5 +1,6 @@
 import uuid
 from threading import Lock
+from datetime import datetime, timezone
 
 from .models import Account, Beneficiary, Transaction, TransactionStatus
 
@@ -17,6 +18,14 @@ class MockBank:
     core systems. It does NOT check account ownership, overdrafts or limits.
     Enforcing those rules is the harness's job. That is the point of this project.
     """
+    def total_sent_today(self, account_id: str) -> float:
+        today = datetime.now(timezone.utc).date()
+        return sum(
+            t.amount for t in self.transactions.values()
+            if t.from_account_id == account_id
+            and t.created_at.date() == today
+            and t.status != TransactionStatus.FAILED
+        )
 
     def __init__(self) -> None:
         self._lock = Lock()

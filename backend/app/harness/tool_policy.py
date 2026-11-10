@@ -30,6 +30,13 @@ def check_transfer(account_id: str, beneficiary_id: str, amount: float) -> Polic
         return PolicyDecision(False, "LIMIT_EXCEEDED",
                               f"Amount exceeds the per-transfer limit of {settings.max_transfer_amount:,.0f} LKR.")
 
+    sent_today = bank.total_sent_today(account_id)
+    if sent_today + amount > settings.daily_transfer_limit:
+        remaining = max(settings.daily_transfer_limit - sent_today, 0)
+        return PolicyDecision(False, "DAILY_LIMIT_EXCEEDED",
+                              f"Daily transfer limit of {settings.daily_transfer_limit:,.0f} LKR reached. "
+                              f"Remaining today: {remaining:,.0f} LKR.")
+
     try:
         balance = bank.get_account(account_id).balance
     except BankError:

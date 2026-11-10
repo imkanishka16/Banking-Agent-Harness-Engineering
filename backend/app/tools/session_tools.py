@@ -5,6 +5,7 @@ from langchain_core.tools import tool
 
 from app.bank.mock_bank import BankError, bank
 from app.harness.tool_policy import check_transfer
+from app.harness.content_guard import sanitize_fields
 
 
 @dataclass(frozen=True)
@@ -30,7 +31,17 @@ def build_session_tools(session: Session) -> list:
             name_query: Part of the beneficiary's name or nickname, e.g. 'Nimal'.
         """
         results = bank.find_beneficiaries(account_id, name_query)
-        return {"count": len(results), "beneficiaries": [b.model_dump() for b in results]}
+        beneficiaries, findings = [], []
+        for b in results:
+            clean, found = sanitize_fields(b.model_dump(), ["name", "nickname"])
+            beneficiaries.append(clean)
+            findings.extend(found)
+        output = {"count": len(beneficiaries), "beneficiaries": beneficiaries}
+        if findings:
+            output["security_notice"] = (
+                "Some fields contained instruction-like text and were removed by the bank's safety filter."
+            )
+        return output
 
     @tool
     def transfer_money(beneficiary_id: str, amount: float, reference: str = "") -> dict:

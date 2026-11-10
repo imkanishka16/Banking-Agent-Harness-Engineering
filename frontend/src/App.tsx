@@ -27,7 +27,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-slate-950 text-slate-100">
       <header className="flex items-center gap-4 border-b border-slate-800 px-6 py-3">
         <h1 className="text-lg font-semibold">
-          🏦 Banking Agent{" "}
+          Banking Agent{" "}
           <span className="font-normal text-slate-400">· Harness Engineering demo</span>
         </h1>
         <ModeToggle mode={chat.mode} onChange={chat.setMode} />

@@ -5,7 +5,11 @@
 A banking AI agent built twice: a **naive** version (LLM + tools, nothing in between) and a
 **harnessed** version wrapped in deterministic controls. An attack eval suite measures the difference.
 
+![Harnessed agent asking for approval before moving money](docs/approval-card.png)
+
+<!-- Optional: add a GIF of naive vs harnessed and uncomment the line below
 ![demo](docs/demo.gif)
+-->
 
 ---
 
@@ -110,7 +114,23 @@ A prompt can't give that guarantee.
 - **Harness trace**: every tool call, policy block, guard finding and approval, live
 - **Bank (ground truth)**: real balances and transactions; anything suspicious is highlighted in red
 
-![screenshot](docs/screenshot.png)
+### Human approval before money moves
+
+Every transfer pauses the LangGraph run with `interrupt()`. The card shows the payee's details
+**from bank records**, not from the LLM's text, so the agent can't mislabel who is being paid.
+
+![Approval card for a 2,000 LKR rent payment](docs/approval-card.png)
+
+### Ambiguity: ask, don't guess
+
+"Send 5000 to Nimal" matches two beneficiaries. The harnessed agent lists both and asks.
+Here the user typed a misspelled name, the agent confirmed *Nimal Pereira*, and the user
+**declined** at the approval step. The trace records `approval_decision` → no transaction
+in the bank panel.
+
+![Two beneficiaries named Nimal: the agent asks, and the user declines the transfer](docs/ambiguous-payee-declined.png)
+
+The naive agent, given the same message, paid **both** Nimals.
 
 ---
 
